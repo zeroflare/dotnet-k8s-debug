@@ -1,4 +1,11 @@
 .git
 .github
+.vscode
+.vs
 k8s
+scripts
+**/bin
+**/obj
 *.md
+*.sln
+.gitignore

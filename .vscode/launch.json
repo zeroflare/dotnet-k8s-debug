@@ -1,0 +1,79 @@
+{
+  "version": "2.0.0",
+  "configurations": [
+    {
+      "name": "NhiApi: 本機",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/src/NhiApi/bin/Debug/net10.0/NhiApi.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/src/NhiApi",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    {
+      "name": "NhiApi: Attach K3s (kubectl)",
+      "type": "coreclr",
+      "request": "attach",
+      "processId": "1",
+      "pipeTransport": {
+        "pipeCwd": "${workspaceFolder}",
+        "pipeProgram": "${workspaceFolder}/scripts/k8s-exec.sh",
+        "pipeArgs": [],
+        "debuggerPath": "/vsdbg/vsdbg",
+        "quoteArgs": false
+      },
+      "windows": {
+        "pipeTransport": {
+          "pipeCwd": "${workspaceFolder}",
+          "pipeProgram": "powershell",
+          "pipeArgs": [
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            "${workspaceFolder}/scripts/k8s-exec.ps1"
+          ],
+          "debuggerPath": "/vsdbg/vsdbg",
+          "quoteArgs": false
+        }
+      },
+      "sourceFileMap": {
+        "/src/NhiApi": "${workspaceFolder}/src/NhiApi"
+      }
+    },
+    {
+      "name": "NhiApi: Attach K3s (SSH)",
+      "type": "coreclr",
+      "request": "attach",
+      "processId": "1",
+      "pipeTransport": {
+        "pipeCwd": "${workspaceFolder}",
+        "pipeProgram": "${workspaceFolder}/scripts/k8s-exec-ssh.sh",
+        "pipeArgs": [],
+        "debuggerPath": "/vsdbg/vsdbg",
+        "quoteArgs": false
+      },
+      "windows": {
+        "pipeTransport": {
+          "pipeCwd": "${workspaceFolder}",
+          "pipeProgram": "powershell",
+          "pipeArgs": [
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            "${workspaceFolder}/scripts/k8s-exec-ssh.ps1"
+          ],
+          "debuggerPath": "/vsdbg/vsdbg",
+          "quoteArgs": false
+        }
+      },
+      "sourceFileMap": {
+        "/src/NhiApi": "${workspaceFolder}/src/NhiApi"
+      }
+    }
+  ]
+}

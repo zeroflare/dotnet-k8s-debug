@@ -1,0 +1,7 @@
+{
+  "recommendations": [
+    "ms-dotnettools.csharp",
+    "ms-dotnettools.csdevkit",
+    "ms-kubernetes-tools.vscode-kubernetes-tools"
+  ]
+}

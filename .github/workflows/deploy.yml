@@ -41,4 +41,4 @@ jobs:
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
           kubectl apply -f ~/my-app-k8s/my-app.yaml
-          kubectl rollout status deployment/my-app-deploy --timeout=120s
+          kubectl rollout status deployment/my-app-deploy --timeout=180s
