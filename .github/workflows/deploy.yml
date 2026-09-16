@@ -1,0 +1,43 @@
+name: Build and Deploy to K3s
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Set image tag from commit time
+      run: |
+        IMAGE_TAG=$(TZ=Asia/Taipei git show -s --format=%cd --date=format:'%Y%m%d-%H%M%S')
+        echo "IMAGE_TAG=${IMAGE_TAG}" >> "$GITHUB_ENV"
+        echo "Using image tag: ${IMAGE_TAG}"
+
+    - name: Set up SSH Key & Tunnel
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+        chmod 600 ~/.ssh/id_ed25519
+        ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+        # 建立背景 SSH Tunnel，將 Runner local 5000 對映到 VM local 5000
+        ssh -f -N -L 5000:localhost:5000 ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}
+
+    - name: Build and Push Docker Image
+      run: |
+        docker build -t localhost:5000/my-app:${{ env.IMAGE_TAG }} .
+        docker push localhost:5000/my-app:${{ env.IMAGE_TAG }}
+
+    - name: Deploy to K3s via SSH
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          kubectl set image deployment/my-app-deploy my-app=localhost:5000/my-app:${{ env.IMAGE_TAG }}
