@@ -25,6 +25,17 @@ curl http://localhost:8080/weatherforecast
 
 停 debug 用 **Detach**，不要 Stop。
 
+## 手動開 / 關 PDB（不重建 image）
+
+GitHub Actions → **Run workflow**（需與 deploy 相同的 `SSH_*` secrets）：
+
+| Workflow | 作用 |
+|----------|------|
+| **Enable PDB in K3s Pod** | 依輸入的 `git_ref` 在 runner 上 `publish -c Debug` 產生 PDB，`kubectl cp` 到 pod `/app/NhiApi.pdb` |
+| **Remove PDB from K3s Pod** | 刪除 pod 內 `/app/NhiApi.pdb` |
+
+`git_ref` **必須與目前 pod 裡的 `NhiApi.dll` 同一 commit**，否則斷點對不上。Pod 不會因加/刪 PDB 而重啟；vsdbg 仍須在 image 內（本 repo Dockerfile 已安裝）。
+
 ## Visual Studio（Windows）
 
 ```powershell
