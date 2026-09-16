@@ -12,12 +12,6 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    - name: Set image tag from commit time
-      run: |
-        IMAGE_TAG=$(TZ=Asia/Taipei git show -s --format=%cd --date=format:'%Y%m%d-%H%M%S')
-        echo "IMAGE_TAG=${IMAGE_TAG}" >> "$GITHUB_ENV"
-        echo "Using image tag: ${IMAGE_TAG}"
-
     - name: Set up SSH Key & Tunnel
       run: |
         mkdir -p ~/.ssh
@@ -30,8 +24,14 @@ jobs:
 
     - name: Build and Push Docker Image
       run: |
-        docker build -t localhost:5000/my-app:${{ env.IMAGE_TAG }} .
-        docker push localhost:5000/my-app:${{ env.IMAGE_TAG }}
+        docker build -t localhost:5000/my-app:${{ github.sha }} .
+        docker push localhost:5000/my-app:${{ github.sha }}
+
+    - name: Copy k8s manifests
+      run: |
+        sed -i "s|__IMAGE_TAG__|${{ github.sha }}|g" k8s/my-app.yaml
+        ssh ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} 'mkdir -p ~/my-app-k8s'
+        scp k8s/* ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:~/my-app-k8s/
 
     - name: Deploy to K3s via SSH
       uses: appleboy/ssh-action@v1.0.3
@@ -40,4 +40,5 @@ jobs:
         username: ${{ secrets.SSH_USERNAME }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          kubectl set image deployment/my-app-deploy my-app=localhost:5000/my-app:${{ env.IMAGE_TAG }}
+          kubectl apply -f ~/my-app-k8s/my-app.yaml
+          kubectl rollout status deployment/my-app-deploy --timeout=120s
