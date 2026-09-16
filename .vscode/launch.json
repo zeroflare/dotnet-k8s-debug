@@ -14,62 +14,33 @@
       }
     },
     {
-      "name": "NhiApi: Attach K3s (kubectl)",
+      "name": "NhiApi: Attach K8s (SSH)",
       "type": "coreclr",
       "request": "attach",
-      "processId": "1",
+      "processId": 1,
+      "justMyCode": false,
       "pipeTransport": {
         "pipeCwd": "${workspaceFolder}",
-        "pipeProgram": "${workspaceFolder}/scripts/k8s-exec.sh",
-        "pipeArgs": [],
+        "pipeProgram": "ssh",
+        "pipeArgs": [
+          "-T",
+          "-i",
+          "${workspaceFolder}/scripts/p.key",
+          "-o",
+          "IdentitiesOnly=yes",
+          "-o",
+          "LogLevel=ERROR",
+          "github@136.119.103.123",
+          "kubectl",
+          "exec",
+          "-i",
+          "deploy/my-app-deploy",
+          "-c",
+          "my-app",
+          "--"
+        ],
         "debuggerPath": "/vsdbg/vsdbg",
         "quoteArgs": false
-      },
-      "windows": {
-        "pipeTransport": {
-          "pipeCwd": "${workspaceFolder}",
-          "pipeProgram": "powershell",
-          "pipeArgs": [
-            "-NoProfile",
-            "-ExecutionPolicy",
-            "Bypass",
-            "-File",
-            "${workspaceFolder}/scripts/k8s-exec.ps1"
-          ],
-          "debuggerPath": "/vsdbg/vsdbg",
-          "quoteArgs": false
-        }
-      },
-      "sourceFileMap": {
-        "/src/NhiApi": "${workspaceFolder}/src/NhiApi"
-      }
-    },
-    {
-      "name": "NhiApi: Attach K3s (SSH)",
-      "type": "coreclr",
-      "request": "attach",
-      "processId": "1",
-      "pipeTransport": {
-        "pipeCwd": "${workspaceFolder}",
-        "pipeProgram": "${workspaceFolder}/scripts/k8s-exec-ssh.sh",
-        "pipeArgs": [],
-        "debuggerPath": "/vsdbg/vsdbg",
-        "quoteArgs": false
-      },
-      "windows": {
-        "pipeTransport": {
-          "pipeCwd": "${workspaceFolder}",
-          "pipeProgram": "powershell",
-          "pipeArgs": [
-            "-NoProfile",
-            "-ExecutionPolicy",
-            "Bypass",
-            "-File",
-            "${workspaceFolder}/scripts/k8s-exec-ssh.ps1"
-          ],
-          "debuggerPath": "/vsdbg/vsdbg",
-          "quoteArgs": false
-        }
       },
       "sourceFileMap": {
         "/src/NhiApi": "${workspaceFolder}/src/NhiApi"

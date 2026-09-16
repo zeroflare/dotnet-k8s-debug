@@ -1,19 +1,10 @@
 # Visual Studio：產生 DebugAdapterHost 用的 launch.json，並印出要貼到 Command Window 的命令。
-# 用法（在 repo 根目錄）：
-#   .\scripts\Start-VsK8sAttach.ps1
-#   .\scripts\Start-VsK8sAttach.ps1 -ViaSsh
-param(
-    [switch]$ViaSsh
-)
+param()
 
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $sourcePath = Join-Path $repoRoot "src\NhiApi"
-$execScript = if ($ViaSsh) {
-    Join-Path $PSScriptRoot "k8s-exec-ssh.ps1"
-} else {
-    Join-Path $PSScriptRoot "k8s-exec.ps1"
-}
+$execScript = Join-Path $PSScriptRoot "k8s-exec-ssh.ps1"
 
 $launchPath = Join-Path $env:TEMP "nhi-k8s-debug-attach.launch.json"
 $launch = @{

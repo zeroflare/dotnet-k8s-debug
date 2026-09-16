@@ -1,4 +1,4 @@
-# Debug image：帶 Portable PDB + vsdbg，供本機 VS / VS Code 用 kubectl exec attach
+# Debug image：帶 Portable PDB + vsdbg，供 VS Code / Visual Studio 用 kubectl exec attach
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 

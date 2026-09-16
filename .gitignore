@@ -5,3 +5,5 @@ obj/
 *.suo
 *.userosscache
 artifacts/
+*.key
+scripts/p.key
