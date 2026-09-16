@@ -4,7 +4,9 @@
 
 .NET 10 Minimal API，部署到 K3s 後用 **vsdbg + kubectl exec** 遠端下斷點。vsdbg 不開 TCP port。
 
-原理、先決條件與 msvsmon / netcoredbg 比較見 [docs/remote-k8s-dotnet-debug.md](./docs/remote-k8s-dotnet-debug.md)。
+預設映像為 **Release，不含 PDB／vsdbg**；除錯前用 Actions 注入，結束後可再刪除。
+
+原理見 [docs/remote-k8s-dotnet-debug.md](./docs/remote-k8s-dotnet-debug.md)。
 
 ## VS Code
 
@@ -14,9 +16,10 @@
 
 ## 遠端 debug
 
-1. 在 `Program.cs` 下斷點  
-2. **NhiApi: Attach K8s (SSH)** → F5  
-3. Port-forward 後打 API：
+1. GitHub Actions 手動跑 **Enable Debug Tools (vsdbg + PDB)**（`git_ref` 須對齊目前 pod 的 DLL commit）  
+2. 在 `Program.cs` 下斷點  
+3. **NhiApi: Attach K8s (SSH)** → F5  
+4. Port-forward 後打 API：
 
 ```bash
 ssh -i scripts/p.key -o IdentitiesOnly=yes -L 8080:localhost:8080 github@136.119.103.123 \
@@ -27,18 +30,16 @@ ssh -i scripts/p.key -o IdentitiesOnly=yes -L 8080:localhost:8080 github@136.119
 curl http://localhost:8080/weatherforecast
 ```
 
-停 debug 用 **Detach**，不要 Stop。
+5. 停 debug 用 **Detach**；可再跑 **Remove Debug Tools (vsdbg + PDB)** 清掉容器內工具  
 
-## 手動開 / 關 PDB（不重建 image）
-
-GitHub Actions → **Run workflow**（需與 deploy 相同的 `SSH_*` secrets）：
+## 手動開 / 關除錯工具（不重建 image）
 
 | Workflow | 作用 |
 |----------|------|
-| **Enable PDB in K3s Pod** | 依輸入的 `git_ref` 在 runner 上 `publish -c Debug` 產生 PDB，`kubectl cp` 到 pod `/app/NhiApi.pdb` |
-| **Remove PDB from K3s Pod** | 刪除 pod 內 `/app/NhiApi.pdb` |
+| **Enable Debug Tools (vsdbg + PDB)** | 下載 linux-x64 vsdbg + 依 `git_ref` 建出匹配 PDB，拷進 pod `/vsdbg` 與 `/app/NhiApi.pdb` |
+| **Remove Debug Tools (vsdbg + PDB)** | 刪除 `/vsdbg` 與 `/app/NhiApi.pdb` |
 
-`git_ref` **必須與目前 pod 裡的 `NhiApi.dll` 同一 commit**，否則斷點對不上。Pod 不會因加/刪 PDB 而重啟；vsdbg 仍須在 image 內（本 repo Dockerfile 已安裝）。
+需與 deploy 相同的 `SSH_*` secrets。Pod 重建後注入的檔案會消失，需再 Enable。
 
 ## Visual Studio（Windows）
 

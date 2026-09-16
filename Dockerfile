@@ -1,4 +1,5 @@
-# Debug image：帶 Portable PDB + vsdbg，供 VS Code / Visual Studio 用 kubectl exec attach
+# 最終映像只含應用程式：不含 PDB、不含 vsdbg。
+# 除錯時用 GitHub Actions「Enable Debug Tools」手動拷入；結束可再 Remove。
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
@@ -7,21 +8,22 @@ RUN dotnet restore NhiApi/NhiApi.csproj
 
 COPY src/NhiApi/ NhiApi/
 WORKDIR /src/NhiApi
-RUN dotnet publish -c Debug -o /app/publish --no-restore
+# 中間產物可含 PDB（供與日後 Actions 重建的符號對齊）；不會留在 final 階段
+RUN dotnet publish -c Release \
+    -p:DebugType=portable \
+    -p:DebugSymbols=true \
+    -o /app/publish \
+    --no-restore
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 
-# procps 提供 ps（process picker）；vsdbg 是 .NET 跨平台 debugger（stdio，不開 port）
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl unzip procps \
-    && curl -sSL https://aka.ms/getvsdbgsh | /bin/sh /dev/stdin -v latest -l /vsdbg \
-    && rm -rf /var/lib/apt/lists/*
-
 COPY --from=build /app/publish .
+# 丟棄符號：跑起來的 image / pod 預設沒有 PDB
+RUN rm -f /app/*.pdb
 
 ENV ASPNETCORE_URLS=http://+:8080
-ENV ASPNETCORE_ENVIRONMENT=Development
+ENV ASPNETCORE_ENVIRONMENT=Production
 
 EXPOSE 8080
 ENTRYPOINT ["dotnet", "NhiApi.dll"]

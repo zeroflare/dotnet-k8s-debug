@@ -1,14 +1,14 @@
-name: Remove PDB from K3s Pod
+name: Remove Debug Tools (vsdbg + PDB)
 
 on:
   workflow_dispatch:
 
 jobs:
-  disable-pdb:
+  disable-debug-tools:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Remove PDB via SSH
+    - name: Remove vsdbg and PDB via SSH
       uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.SSH_HOST }}
@@ -17,8 +17,13 @@ jobs:
         script: |
           set -euo pipefail
           kubectl exec deploy/my-app-deploy -c my-app -- rm -f /app/NhiApi.pdb
+          kubectl exec deploy/my-app-deploy -c my-app -- rm -rf /vsdbg
           if kubectl exec deploy/my-app-deploy -c my-app -- test -f /app/NhiApi.pdb; then
             echo "PDB 仍存在" >&2
             exit 1
           fi
-          echo "已移除 /app/NhiApi.pdb"
+          if kubectl exec deploy/my-app-deploy -c my-app -- test -e /vsdbg; then
+            echo "vsdbg 目錄仍存在" >&2
+            exit 1
+          fi
+          echo "已移除 /app/NhiApi.pdb 與 /vsdbg"
