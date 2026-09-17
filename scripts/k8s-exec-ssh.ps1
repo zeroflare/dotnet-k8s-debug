@@ -12,8 +12,10 @@ if (-not (Test-Path $keyPath)) {
 $sshArgs = @(
     "-T",
     "-i", $keyPath,
+    "-o", "BatchMode=yes",
     "-o", "IdentitiesOnly=yes",
     "-o", "StrictHostKeyChecking=accept-new",
+    "-o", "LogLevel=ERROR",
     "$userName@$hostName"
 )
 

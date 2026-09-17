@@ -45,6 +45,37 @@
       "sourceFileMap": {
         "/src/NhiApi": "${workspaceFolder}/src/NhiApi"
       }
+    },
+    {
+      "name": "NhiApi: Attach K8s (SSH) [Windows]",
+      "type": "coreclr",
+      "request": "attach",
+      "processId": 1,
+      "justMyCode": false,
+      "pipeTransport": {
+        "pipeCwd": "${workspaceFolder}",
+        "pipeProgram": "${env:WINDIR}\\System32\\OpenSSH\\ssh.exe",
+        "pipeArgs": [
+          "-T",
+          "-i",
+          "${workspaceFolder}\\scripts\\p.key",
+          "-o",
+          "BatchMode=yes",
+          "-o",
+          "IdentitiesOnly=yes",
+          "-o",
+          "StrictHostKeyChecking=accept-new",
+          "-o",
+          "LogLevel=ERROR",
+          "github@136.119.103.123",
+          "kubectl exec -i deploy/my-app-deploy -c my-app --"
+        ],
+        "debuggerPath": "/vsdbg/vsdbg",
+        "quoteArgs": true
+      },
+      "sourceFileMap": {
+        "/src/NhiApi": "${workspaceFolder}/src/NhiApi"
+      }
     }
   ]
 }

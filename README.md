@@ -12,7 +12,29 @@
 
 1. 安裝 **[C#](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csharp)**（`ms-dotnettools.csharp`）。
 2. 本機需 [.NET 10 SDK](https://dotnet.microsoft.com/download)（`.vscode/settings.json` 已設 `dotnet.dotnetPath`）。
-3. Run and Debug 選 **NhiApi: Attach K8s (SSH)**。
+3. Run and Debug：
+   - **macOS / Linux**：選 **NhiApi: Attach K8s (SSH)**
+   - **Windows**：選 **NhiApi: Attach K8s (SSH) [Windows]**
+
+### Windows 卡在「正在啟動 ssh」
+
+多半是 OpenSSH 找不到、金鑰權限，或卡在隱形密碼／主機金鑰提示。在 **PowerShell** 先手動驗證：
+
+```powershell
+# 1) 確認系統 OpenSSH
+Get-Command ssh.exe
+# 應指向 C:\Windows\System32\OpenSSH\ssh.exe
+
+# 2) 金鑰 ACL（OpenSSH 很嚴）
+icacls scripts\p.key /inheritance:r
+icacls scripts\p.key /grant:r "$($env:USERNAME):(R)"
+
+# 3) 手動連一次（應立刻進遠端，不要問密碼）
+ssh -T -i scripts\p.key -o BatchMode=yes -o IdentitiesOnly=yes `
+  -o StrictHostKeyChecking=accept-new github@136.119.103.123 -- kubectl get pods -l app=my-app
+```
+
+若第 3 步失敗，VS Code 也會一直卡在啟動 ssh；先修好這條再 F5。
 
 ## 遠端 debug
 
