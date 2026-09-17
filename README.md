@@ -4,7 +4,7 @@
 
 .NET 10 Minimal API，部署到 K3s 後用 **vsdbg + kubectl exec** 遠端下斷點。vsdbg 不開 TCP port。
 
-預設映像為 **Release + 內建 vsdbg + 同源 PDB**（預設不刪 PDB）。deploy 仍會把 PDB 備份到 VM；必要時可用 Actions 再注入。
+預設映像為 **Debug + 內建 vsdbg + 同源 PDB**（預設不刪 PDB，方便遠端改斷點變數）。deploy 仍會把 PDB 備份到 VM；必要時可用 Actions 再注入。
 
 原理見 [docs/remote-k8s-dotnet-debug.md](./docs/remote-k8s-dotnet-debug.md)。
 

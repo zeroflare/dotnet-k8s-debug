@@ -4,7 +4,7 @@
 |------|------|
 | 儲存庫 | https://github.com/zeroflare/nhi-k8s-debug （Public） |
 | 主方案 | Microsoft **vsdbg** + **`kubectl exec`（stdio）** + **Portable PDB** |
-| 預設映像 | **Release + 內建 vsdbg + 同源 PDB**（預設不刪 PDB；deploy 另備份） |
+| 預設映像 | **Debug + 內建 vsdbg + 同源 PDB**（預設不刪；方便斷點改區域變數） |
 | 環境 | Linux K3s／Kubernetes 容器內之 .NET 10 |
 | IDE | Visual Studio Code（建議）／Visual Studio（Windows） |
 
@@ -74,10 +74,10 @@ Dockerfile 的 publish 目錄是 `/src/NhiApi`，PDB 內路徑才會對得上。
 
 Dockerfile：
 
-1. `dotnet publish -c Release -p:DebugType=portable -p:DebugSymbols=true`  
+1. `dotnet publish -c Debug -p:DebugType=portable -p:DebugSymbols=true`（關閉優化，斷點可改變數）  
 2. 安裝 **vsdbg**（與 curl／unzip／procps）  
 3. 拷入應用後**保留** `NhiApi.pdb`（預設不刪）  
-4. `ASPNETCORE_ENVIRONMENT=Production`  
+4. `ASPNETCORE_ENVIRONMENT=Development`  
 
 deploy 會再備份同源 PDB 到 VM（供 Enable 補注）。
 

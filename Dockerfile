@@ -8,7 +8,8 @@ RUN dotnet restore NhiApi/NhiApi.csproj
 
 COPY src/NhiApi/ NhiApi/
 WORKDIR /src/NhiApi
-RUN dotnet publish -c Release \
+# Debug：關閉優化，遠端斷點才能停穩並改區域變數（例如 / 的 status）
+RUN dotnet publish -c Debug \
     -p:DebugType=portable \
     -p:DebugSymbols=true \
     -o /app/publish \
