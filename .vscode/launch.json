@@ -54,21 +54,13 @@
       "justMyCode": false,
       "pipeTransport": {
         "pipeCwd": "${workspaceFolder}",
-        "pipeProgram": "${env:WINDIR}\\System32\\OpenSSH\\ssh.exe",
+        "pipeProgram": "powershell.exe",
         "pipeArgs": [
-          "-T",
-          "-i",
-          "${workspaceFolder}\\scripts\\p.key",
-          "-o",
-          "BatchMode=yes",
-          "-o",
-          "IdentitiesOnly=yes",
-          "-o",
-          "StrictHostKeyChecking=accept-new",
-          "-o",
-          "LogLevel=ERROR",
-          "github@136.119.103.123",
-          "kubectl exec -i deploy/my-app-deploy -c my-app --"
+          "-NoProfile",
+          "-ExecutionPolicy",
+          "Bypass",
+          "-File",
+          "${workspaceFolder}\\scripts\\k8s-exec-ssh.ps1"
         ],
         "debuggerPath": "/vsdbg/vsdbg",
         "quoteArgs": true

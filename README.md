@@ -16,25 +16,23 @@
    - **macOS / Linux**：選 **NhiApi: Attach K8s (SSH)**
    - **Windows**：選 **NhiApi: Attach K8s (SSH) [Windows]**
 
-### Windows 卡在「正在啟動 ssh」
+### Windows：卡在「正在啟動 ssh」或 `ssh 意外結束 255`
 
-多半是 OpenSSH 找不到、金鑰權限，或卡在隱形密碼／主機金鑰提示。在 **PowerShell** 先手動驗證：
+**255** = SSH 連線／金鑰驗證失敗（還不是 vsdbg）。請用 **NhiApi: Attach K8s (SSH) [Windows]**（走 `scripts\k8s-exec-ssh.ps1`）。
+
+在 **PowerShell** 先手動驗證；這步失敗，F5 也會 255：
 
 ```powershell
-# 1) 確認系統 OpenSSH
-Get-Command ssh.exe
-# 應指向 C:\Windows\System32\OpenSSH\ssh.exe
-
-# 2) 金鑰 ACL（OpenSSH 很嚴）
+# 1) 金鑰 ACL（OpenSSH 很嚴；權限太寬會直接拒用）
 icacls scripts\p.key /inheritance:r
 icacls scripts\p.key /grant:r "$($env:USERNAME):(R)"
 
-# 3) 手動連一次（應立刻進遠端，不要問密碼）
-ssh -T -i scripts\p.key -o BatchMode=yes -o IdentitiesOnly=yes `
+# 2) 手動連（應列出 pod，不要問密碼）
+ssh -T -i .\scripts\p.key -o BatchMode=yes -o IdentitiesOnly=yes `
   -o StrictHostKeyChecking=accept-new github@136.119.103.123 -- kubectl get pods -l app=my-app
 ```
 
-若第 3 步失敗，VS Code 也會一直卡在啟動 ssh；先修好這條再 F5。
+常見原因：本機沒有 `scripts\p.key`、金鑰 ACL、尚未信任主機金鑰、或防火牆挡 22。
 
 ## 遠端 debug
 
