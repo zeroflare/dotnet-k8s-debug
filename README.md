@@ -16,23 +16,19 @@
    - **macOS / Linux**：選 **NhiApi: Attach K8s (SSH)**
    - **Windows**：選 **NhiApi: Attach K8s (SSH) [Windows]**
 
-### Windows：卡在「正在啟動 ssh」或 `ssh 意外結束 255`
+### Windows：`p.key` too open / 意外結束 255
 
-**255** = SSH 連線／金鑰驗證失敗（還不是 vsdbg）。請用 **NhiApi: Attach K8s (SSH) [Windows]**（走 `scripts\k8s-exec-ssh.ps1`）。
-
-在 **PowerShell** 先手動驗證；這步失敗，F5 也會 255：
+OpenSSH 認為私鑰權限太寬。**NhiApi: Attach K8s (SSH) [Windows]** 會經 `k8s-exec-ssh.ps1` 自動收緊 ACL；也可先手動跑：
 
 ```powershell
-# 1) 金鑰 ACL（OpenSSH 很嚴；權限太寬會直接拒用）
-icacls scripts\p.key /inheritance:r
-icacls scripts\p.key /grant:r "$($env:USERNAME):(R)"
+icacls .\scripts\p.key /inheritance:r
+icacls .\scripts\p.key /grant:r "$($env:USERNAME):(R)"
 
-# 2) 手動連（應列出 pod，不要問密碼）
 ssh -T -i .\scripts\p.key -o BatchMode=yes -o IdentitiesOnly=yes `
   -o StrictHostKeyChecking=accept-new github@136.119.103.123 -- kubectl get pods -l app=my-app
 ```
 
-常見原因：本機沒有 `scripts\p.key`、金鑰 ACL、尚未信任主機金鑰、或防火牆挡 22。
+手動連成功後再 F5。
 
 ## 遠端 debug
 

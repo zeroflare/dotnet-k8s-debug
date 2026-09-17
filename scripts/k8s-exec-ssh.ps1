@@ -9,9 +9,14 @@ if (-not (Test-Path $keyPath)) {
     throw "找不到 SSH 私鑰：$keyPath"
 }
 
+# Windows OpenSSH 要求私鑰 ACL 僅目前使用者可讀，否則會報 Permissions ... are too open
+$keyFull = (Resolve-Path $keyPath).Path
+icacls $keyFull /inheritance:r | Out-Null
+icacls $keyFull /grant:r "$($env:USERNAME):(R)" | Out-Null
+
 $sshArgs = @(
     "-T",
-    "-i", $keyPath,
+    "-i", $keyFull,
     "-o", "BatchMode=yes",
     "-o", "IdentitiesOnly=yes",
     "-o", "StrictHostKeyChecking=accept-new",
