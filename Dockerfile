@@ -1,4 +1,5 @@
-# 映像內建 vsdbg；PDB 不進最終映像，由 deploy 存檔、Enable 再注入（必須同源）。
+# 映像內建 vsdbg + 同源 Portable PDB（預設不刪 PDB）。
+# deploy 仍會另存 PDB 到 VM，必要時可用 Enable 再注入。
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
@@ -22,8 +23,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /app/publish .
-# PDB 與 DLL 同一次 publish；最終映像不帶 PDB，deploy 會另存供 Enable 注入
-RUN rm -f /app/*.pdb
+# 保留與 DLL 同一次 publish 的 PDB（預設不刪）
 
 ENV ASPNETCORE_URLS=http://+:8080
 ENV ASPNETCORE_ENVIRONMENT=Production
