@@ -16,19 +16,17 @@
    - **macOS / Linux**：選 **NhiApi: Attach K8s (SSH)**
    - **Windows**：選 **NhiApi: Attach K8s (SSH) [Windows]**
 
-### Windows：`p.key` too open / 意外結束 255
+### Windows：卡住、進不了 debug mode / `p.key` too open
 
-OpenSSH 認為私鑰權限太寬。**NhiApi: Attach K8s (SSH) [Windows]** 會經 `k8s-exec-ssh.ps1` 自動收緊 ACL；也可先手動跑：
+VS Code 的 DAP 需要 **ssh.exe 直接當 pipe**；中間夾 PowerShell 常會卡在已連上 vsdbg 卻不進 debug。
+
+請用 **NhiApi: Attach K8s (SSH) [Windows]**：會先跑 `fix-ssh-key-acl`，再用系統 OpenSSH 直連（參數與 macOS 相同）。
+
+若仍 too open，手動：
 
 ```powershell
-icacls .\scripts\p.key /inheritance:r
-icacls .\scripts\p.key /grant:r "$($env:USERNAME):(R)"
-
-ssh -T -i .\scripts\p.key -o BatchMode=yes -o IdentitiesOnly=yes `
-  -o StrictHostKeyChecking=accept-new github@136.119.103.123 -- kubectl get pods -l app=my-app
+.\scripts\Fix-SshKeyAcl.ps1 .\scripts\p.key
 ```
-
-手動連成功後再 F5。
 
 ## 遠端 debug
 

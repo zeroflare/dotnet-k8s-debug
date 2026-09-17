@@ -13,6 +13,26 @@
       ],
       "group": "build",
       "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "fix-ssh-key-acl",
+      "type": "shell",
+      "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"${workspaceFolder}\\scripts\\Fix-SshKeyAcl.ps1\" \"${workspaceFolder}\\scripts\\p.key\"",
+      "windows": {
+        "options": {
+          "shell": {
+            "executable": "cmd.exe",
+            "args": ["/d", "/c"]
+          }
+        }
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false
+      }
     }
   ]
 }

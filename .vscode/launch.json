@@ -52,18 +52,31 @@
       "request": "attach",
       "processId": 1,
       "justMyCode": false,
+      "preLaunchTask": "fix-ssh-key-acl",
       "pipeTransport": {
         "pipeCwd": "${workspaceFolder}",
-        "pipeProgram": "powershell.exe",
+        "pipeProgram": "${env:WINDIR}\\System32\\OpenSSH\\ssh.exe",
         "pipeArgs": [
-          "-NoProfile",
-          "-ExecutionPolicy",
-          "Bypass",
-          "-File",
-          "${workspaceFolder}\\scripts\\k8s-exec-ssh.ps1"
+          "-T",
+          "-i",
+          "${workspaceFolder}/scripts/p.key",
+          "-o",
+          "BatchMode=yes",
+          "-o",
+          "IdentitiesOnly=yes",
+          "-o",
+          "StrictHostKeyChecking=accept-new",
+          "github@136.119.103.123",
+          "kubectl",
+          "exec",
+          "-i",
+          "deploy/my-app-deploy",
+          "-c",
+          "my-app",
+          "--"
         ],
         "debuggerPath": "/vsdbg/vsdbg",
-        "quoteArgs": true
+        "quoteArgs": false
       },
       "sourceFileMap": {
         "/src/NhiApi": "${workspaceFolder}/src/NhiApi"

@@ -1,18 +1,13 @@
 # 透過 SSH 在 K3s VM 上執行 kubectl exec，把 vsdbg stdio 接到本機 debugger。
+# 供 Visual Studio DebugAdapterHost 使用；VS Code Windows 請用 launch.json 直連 ssh.exe（避免 PowerShell 擋 DAP stdio）。
 $ErrorActionPreference = "Stop"
 
 $hostName = if ($env:K3S_SSH_HOST) { $env:K3S_SSH_HOST } else { "136.119.103.123" }
 $userName = if ($env:K3S_SSH_USER) { $env:K3S_SSH_USER } else { "github" }
 $keyPath = if ($env:K3S_SSH_KEY) { $env:K3S_SSH_KEY } else { Join-Path $PSScriptRoot "p.key" }
 
-if (-not (Test-Path $keyPath)) {
-    throw "找不到 SSH 私鑰：$keyPath"
-}
-
-# Windows OpenSSH 要求私鑰 ACL 僅目前使用者可讀，否則會報 Permissions ... are too open
+& (Join-Path $PSScriptRoot "Fix-SshKeyAcl.ps1") $keyPath
 $keyFull = (Resolve-Path $keyPath).Path
-icacls $keyFull /inheritance:r | Out-Null
-icacls $keyFull /grant:r "$($env:USERNAME):(R)" | Out-Null
 
 $sshArgs = @(
     "-T",
