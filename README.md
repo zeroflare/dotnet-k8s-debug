@@ -58,8 +58,20 @@ curl http://localhost:8080/weatherforecast
 需與 deploy 相同的 `SSH_*` secrets。Artifact 預設保留 30 天。
 ## Visual Studio（Windows）
 
+Visual Studio **不能**像 VS Code 一樣按綠色 Run 就走 `pipeTransport`（沒有同等 F5 設定）。請：
+
+1. 用 VS 開啟 `NhiApi.sln`，在 `Program.cs` 下斷點  
+2. PowerShell 跑：
+
 ```powershell
-.\scripts\Start-VsK8sAttach.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Start-VsK8sAttach.ps1
 ```
+
+腳本已用 **UTF-8 BOM**；若中文仍亂碼，先執行 `chcp 65001` 再跑。
+
+腳本會對「已開啟的 VS」直接下 `DebugAdapterHost.Launch` 開始 attach。  
+若自動下命令失敗，加 `-LaunchJsonOnly`，再把印出的命令貼到 Command Window（`Ctrl+Alt+A`）。
+
+停 debug 用 **Debug → Detach All**，不要 Stop。
 
 `scripts/p.key` 不要提交。

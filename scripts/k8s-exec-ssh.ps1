@@ -1,4 +1,4 @@
-# 透過 SSH 在 K3s VM 上執行 kubectl exec，把 vsdbg stdio 接到本機 debugger。
+﻿# 透過 SSH 在 K3s VM 上執行 kubectl exec，把 vsdbg stdio 接到本機 debugger。
 # 供 Visual Studio DebugAdapterHost 使用；VS Code Windows 請用 launch.json 直連 ssh.exe（避免 PowerShell 擋 DAP stdio）。
 $ErrorActionPreference = "Stop"
 
