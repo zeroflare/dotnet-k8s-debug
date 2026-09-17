@@ -1,4 +1,4 @@
-name: Remove Debug Tools (vsdbg + PDB)
+name: Remove Debug Tools (PDB)
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Remove vsdbg and PDB via SSH
+    - name: Remove PDB via SSH
       uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.SSH_HOST }}
@@ -16,14 +16,10 @@ jobs:
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
           set -euo pipefail
+          # vsdbg 在映像內，只移除注入的 PDB
           kubectl exec deploy/my-app-deploy -c my-app -- rm -f /app/NhiApi.pdb
-          kubectl exec deploy/my-app-deploy -c my-app -- rm -rf /vsdbg
           if kubectl exec deploy/my-app-deploy -c my-app -- test -f /app/NhiApi.pdb; then
             echo "PDB 仍存在" >&2
             exit 1
           fi
-          if kubectl exec deploy/my-app-deploy -c my-app -- test -e /vsdbg; then
-            echo "vsdbg 目錄仍存在" >&2
-            exit 1
-          fi
-          echo "已移除 /app/NhiApi.pdb 與 /vsdbg"
+          echo "已移除 /app/NhiApi.pdb（保留映像內 /vsdbg）"

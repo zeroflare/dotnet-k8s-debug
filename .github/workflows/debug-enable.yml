@@ -1,78 +1,38 @@
-name: Enable Debug Tools (vsdbg + PDB)
+name: Enable Debug Tools (PDB)
 
 on:
   workflow_dispatch:
-    inputs:
-      git_ref:
-        description: 與目前 pod 內 NhiApi.dll 相同 commit / tag / branch
-        required: true
-        default: main
 
 jobs:
   enable-debug-tools:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
+    - name: Inject matching PDB into pod
+      uses: appleboy/ssh-action@v1.0.3
       with:
-        ref: ${{ inputs.git_ref }}
-
-    - name: Build matching PDB (same layout as Dockerfile)
-      run: |
-        set -euo pipefail
-        # 與 Dockerfile 相同：WORKDIR /src/NhiApi、Release + portable PDB，路徑才會是 /src/NhiApi
-        docker run --rm \
-          -v "$PWD:/work" \
-          -w /work \
-          mcr.microsoft.com/dotnet/sdk:10.0 \
-          bash -c '
-            set -euo pipefail
-            mkdir -p /src/NhiApi
-            cp -a src/NhiApi/. /src/NhiApi/
-            cd /src/NhiApi
-            dotnet restore
-            dotnet publish -c Release \
-              -p:DebugType=portable \
-              -p:DebugSymbols=true \
-              -o /work/pdb-out \
-              --no-restore
-          '
-        test -f ./pdb-out/NhiApi.pdb
-        ls -l ./pdb-out/NhiApi.pdb
-
-    - name: Download vsdbg (linux-x64)
-      run: |
-        set -euo pipefail
-        curl -sSL https://aka.ms/getvsdbgsh | bash /dev/stdin -v latest -r linux-x64 -l "${GITHUB_WORKSPACE}/vsdbg-out"
-        test -x "${GITHUB_WORKSPACE}/vsdbg-out/vsdbg"
-        ls -la "${GITHUB_WORKSPACE}/vsdbg-out/vsdbg"
-
-    - name: Set up SSH
-      run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
-        chmod 600 ~/.ssh/id_ed25519
-        ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
-
-    - name: Copy vsdbg and PDB into pod
-      run: |
-        set -euo pipefail
-        REMOTE="${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}"
-        ssh "${REMOTE}" 'mkdir -p ~/debug-sync/vsdbg'
-        scp ./pdb-out/NhiApi.pdb "${REMOTE}:~/debug-sync/NhiApi.pdb"
-        scp -r ./vsdbg-out/* "${REMOTE}:~/debug-sync/vsdbg/"
-        ssh "${REMOTE}" 'set -euo pipefail
-          POD="$(kubectl get pods -l app=my-app -o jsonpath="{.items[0].metadata.name}")"
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          set -euo pipefail
+          POD="$(kubectl get pods -l app=my-app -o jsonpath='{.items[0].metadata.name}')"
           if [ -z "${POD}" ]; then
             echo "找不到 app=my-app 的 pod" >&2
             exit 1
           fi
-          kubectl exec "${POD}" -c my-app -- mkdir -p /vsdbg
-          kubectl cp ~/debug-sync/NhiApi.pdb "${POD}:/app/NhiApi.pdb" -c my-app
-          kubectl cp ~/debug-sync/vsdbg/. "${POD}:/vsdbg" -c my-app
-          kubectl exec "${POD}" -c my-app -- chmod -R a+rX /vsdbg
-          kubectl exec "${POD}" -c my-app -- chmod a+x /vsdbg/vsdbg
-          kubectl exec "${POD}" -c my-app -- ls -l /app/NhiApi.pdb /vsdbg/vsdbg
-          rm -rf ~/debug-sync
-        '
+          if ! kubectl exec "${POD}" -c my-app -- test -x /vsdbg/vsdbg; then
+            echo "映像內沒有 /vsdbg/vsdbg" >&2
+            exit 1
+          fi
+          IMAGE="$(kubectl get deploy my-app-deploy -o jsonpath='{.spec.template.spec.containers[0].image}')"
+          SHA="${IMAGE##*:}"
+          PDB=~/my-app-pdbs/${SHA}/NhiApi.pdb
+          if [ ! -f "${PDB}" ]; then
+            echo "找不到與此映像同源的 PDB：${PDB}" >&2
+            echo "請確認該次自動部署有成功存檔 PDB" >&2
+            exit 1
+          fi
+          kubectl cp "${PDB}" "${POD}:/app/NhiApi.pdb" -c my-app
+          kubectl exec "${POD}" -c my-app -- ls -l /app/NhiApi.dll /app/NhiApi.pdb /vsdbg/vsdbg
+          echo "已注入 PDB（image tag=${SHA}）"

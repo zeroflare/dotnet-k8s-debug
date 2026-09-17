@@ -22,10 +22,21 @@ jobs:
         # 建立背景 SSH Tunnel，將 Runner local 5000 對映到 VM local 5000
         ssh -f -N -L 5000:localhost:5000 ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}
 
-    - name: Build and Push Docker Image
+    - name: Build image, save matching PDB, push
       run: |
-        docker build -t localhost:5000/my-app:${{ github.sha }} .
-        docker push localhost:5000/my-app:${{ github.sha }}
+        set -euo pipefail
+        SHA="${{ github.sha }}"
+        docker build -t "localhost:5000/my-app:${SHA}" .
+        # build stage 有與映像 DLL 同源的 PDB（final 已刪掉）
+        docker build --target build -t "my-app-build:${SHA}" .
+        CID="$(docker create "my-app-build:${SHA}")"
+        docker cp "${CID}:/app/publish/NhiApi.pdb" ./NhiApi.pdb
+        docker rm "${CID}"
+        test -f ./NhiApi.pdb
+        docker push "localhost:5000/my-app:${SHA}"
+        REMOTE="${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}"
+        ssh "${REMOTE}" "mkdir -p ~/my-app-pdbs/${SHA}"
+        scp ./NhiApi.pdb "${REMOTE}:~/my-app-pdbs/${SHA}/NhiApi.pdb"
 
     - name: Copy k8s manifests
       run: |
