@@ -29,7 +29,7 @@
 | 要件 | 本專案作法 |
 |------|------------|
 | 除錯器 | Dockerfile 安裝 linux **vsdbg** → `/vsdbg` |
-| 符號 | 映像內保留同源 `/app/NhiApi.pdb`；deploy 另備份到 VM，必要時 Enable 再注入 |
+| 符號 | 映像內保留同源 `/app/NhiApi.pdb`；deploy 上傳 GitHub Artifact `NhiApi-pdb-<sha>`，必要時 Enable 再注入 |
 | 通道 | IDE → **ssh** → **`kubectl exec -i`** → `/vsdbg/vsdbg`（stdio） |
 
 **不要**用另一次 `dotnet publish` 重編 PDB 蓋上去：MVID 不同，斷點會失效。
@@ -62,7 +62,7 @@ Linux 容器上微軟路徑是 **vsdbg + stdio／exec**，不是 msvsmon。
 Pod
         ├── /vsdbg/vsdbg          ← 映像內建
         ├── /app/NhiApi.dll
-        └── /app/NhiApi.pdb       ← 映像內建（同源）；可選 Enable 從備份再注入
+        └── /app/NhiApi.pdb       ← 映像內建（同源）；可選 Enable 從 GitHub Artifact 再注入
 ```
 
 `launch.json`：`coreclr` + `attach` + `processId: 1` + `debuggerPath: /vsdbg/vsdbg` + `sourceFileMap`（`/src/NhiApi` ↔ 本機）。  
@@ -79,7 +79,7 @@ Dockerfile：
 3. 拷入應用後**保留** `NhiApi.pdb`（預設不刪）  
 4. `ASPNETCORE_ENVIRONMENT=Development`  
 
-deploy 會再備份同源 PDB 到 VM（供 Enable 補注）。
+deploy 會上傳同源 PDB 為 GitHub Actions Artifact（供 Enable 補注；不寫入 K3s 主機）。
 
 ---
 
@@ -102,7 +102,7 @@ deploy 會再備份同源 PDB 到 VM（供 Enable 補注）。
 3. Port-forward → 打 API → 命中斷點。  
 4. **Detach**。  
 
-若執行中 PDB 被刪，可跑 **Enable Debug Tools (PDB)** 從 VM 備份注入。
+若執行中 PDB 被刪，可跑 **Enable Debug Tools (PDB)** 從該次 deploy 的 Artifact 注入。
 
 Visual Studio：同一遠端 vsdbg，用 `scripts/Start-VsK8sAttach.ps1`。
 
@@ -116,15 +116,16 @@ Visual Studio：同一遠端 vsdbg，用 `scripts/Start-VsK8sAttach.ps1`。
 
 ---
 
-## 7. GitHub Actions：PDB 備份／注入／移除
+## 7. GitHub Actions：PDB Artifact／注入／移除
 
 | Workflow | 行為 |
 |----------|------|
-| **deploy** | build／push image（含 PDB）；另備份到 `~/my-app-pdbs/<sha>/` |
-| **[Enable Debug Tools](https://github.com/zeroflare/nhi-k8s-debug/blob/main/.github/workflows/debug-enable.yml)** | 依 Deployment image tag 注入備份 PDB（可選） |
+| **deploy** | build／push image（含 PDB）；上傳 Artifact `NhiApi-pdb-<sha>`（保留 30 天） |
+| **[Enable Debug Tools](https://github.com/zeroflare/nhi-k8s-debug/blob/main/.github/workflows/debug-enable.yml)** | 依 Deployment image tag 下載對應 Artifact → 注入 pod（暫存 `/tmp` 後刪除） |
 | **[Remove Debug Tools](https://github.com/zeroflare/nhi-k8s-debug/blob/main/.github/workflows/debug-disable.yml)** | 從執行中 pod 刪除 PDB（映像重建後會回來） |
 
 - Enable／Remove 手動 **Run workflow**；Secrets：`SSH_PRIVATE_KEY`、`SSH_HOST`、`SSH_USERNAME`  
+- **不**把 PDB 長期存在 K3s 主機  
 - 多 replica 時現行實作可能只打到一個 Pod  
 
 ---
@@ -147,8 +148,8 @@ Linux Pod 不要用 msvsmon／4026；本專案為 vsdbg + exec。
 |------|------|
 | `Dockerfile` | Release 應用 + 內建 vsdbg + 同源 PDB |
 | `.vscode/launch.json` | attach／pipeTransport |
-| `.github/workflows/deploy.yml` | 建置部署 + 備份 PDB |
-| `.github/workflows/debug-enable.yml` | 可選注入 PDB |
+| `.github/workflows/deploy.yml` | 建置部署 + 上傳 PDB Artifact |
+| `.github/workflows/debug-enable.yml` | 從 Artifact 注入 PDB |
 | `.github/workflows/debug-disable.yml` | 可選移除執行中 PDB |
 
 - 儲存庫：https://github.com/zeroflare/nhi-k8s-debug  

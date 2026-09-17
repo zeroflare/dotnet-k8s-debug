@@ -1,5 +1,5 @@
 # 映像內建 vsdbg + 同源 Portable PDB（預設不刪 PDB）。
-# deploy 仍會另存 PDB 到 VM，必要時可用 Enable 再注入。
+# deploy 另將同源 PDB 上傳 GitHub Actions Artifact；必要時 Enable 再注入 pod。
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 

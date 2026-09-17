@@ -4,7 +4,7 @@
 
 .NET 10 Minimal API，部署到 K3s 後用 **vsdbg + kubectl exec** 遠端下斷點。vsdbg 不開 TCP port。
 
-預設映像為 **Debug + 內建 vsdbg + 同源 PDB**（預設不刪 PDB，方便遠端改斷點變數）。deploy 仍會把 PDB 備份到 VM；必要時可用 Actions 再注入。
+預設映像為 **Debug + 內建 vsdbg + 同源 PDB**（預設不刪 PDB，方便遠端改斷點變數）。deploy 會把同源 PDB 存成 **GitHub Actions Artifact**；必要時可用 Enable 再注入 pod（不存 K3s 主機）。
 
 原理見 [docs/remote-k8s-dotnet-debug.md](./docs/remote-k8s-dotnet-debug.md)。
 
@@ -46,16 +46,16 @@ curl http://localhost:8080/weatherforecast
 
 5. 停 debug 用 **Detach**
 
-若 Pod 裡 PDB 被拿掉，可跑 **Enable Debug Tools (PDB)** 從 VM 備份再注入。
+若 Pod 裡 PDB 被拿掉，可跑 **Enable Debug Tools (PDB)**：從該次 deploy 的 GitHub Artifact 下載後注入。
 
 ## 手動開 / 關 PDB（可選）
 
 | Workflow | 作用 |
 |----------|------|
-| **Enable Debug Tools (PDB)** | 依目前 Deployment image tag，把 deploy 備份的同源 PDB 拷進 `/app/NhiApi.pdb` |
+| **Enable Debug Tools (PDB)** | 依目前 Deployment image tag，下載 `NhiApi-pdb-<sha>` Artifact 注入 `/app/NhiApi.pdb` |
 | **Remove Debug Tools (PDB)** | 從執行中 pod 刪除 `/app/NhiApi.pdb`（映像內仍有；重建 pod 會回來） |
 
-需與 deploy 相同的 `SSH_*` secrets。
+需與 deploy 相同的 `SSH_*` secrets。Artifact 預設保留 30 天。
 ## Visual Studio（Windows）
 
 ```powershell
