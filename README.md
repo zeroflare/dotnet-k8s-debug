@@ -11,7 +11,8 @@
 
 push `main` 部署預設映像（tag = commit SHA）；要除錯時手動 Run **Build and Deploy** 選 `Dockerfile.debug`（tag = `<sha>-debug`）。
 
-原理見 [docs/remote-k8s-dotnet-debug.md](./docs/remote-k8s-dotnet-debug.md)。
+原理見 [docs/remote-k8s-dotnet-debug.md](./docs/remote-k8s-dotnet-debug.md)。  
+除錯計劃見 [docs/debug-plan.md](./docs/debug-plan.md)。
 
 ## VS Code 遠端 debug
 
