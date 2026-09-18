@@ -1,6 +1,6 @@
-# k8s-debug
+# dotnet-dotnet-k8s-debug
 
-儲存庫：https://github.com/zeroflare/k8s-debug （Public）
+儲存庫：https://github.com/zeroflare/dotnet-dotnet-k8s-debug （Public）
 
 .NET 10 Minimal API，部署到 K3s 後用 **vsdbg + kubectl exec** 遠端下斷點。vsdbg 不開 TCP port。
 
