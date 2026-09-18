@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "NhiApi": {
+    "MyApi": {
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": true,

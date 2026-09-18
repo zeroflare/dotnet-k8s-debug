@@ -2,7 +2,7 @@
 
 | 項目 | 內容 |
 |------|------|
-| 專案 | [nhi-k8s-debug](https://github.com/zeroflare/nhi-k8s-debug) |
+| 專案 | [k8s-debug](https://github.com/zeroflare/k8s-debug) |
 | 目標環境 | **Kubernetes（K3s）上的 .NET 10** 應用（容器內執行） |
 | 除錯方式 | Microsoft **vsdbg** + `kubectl exec`（stdio／DAP），**不開**除錯 TCP port |
 | IDE | Visual Studio Code + Microsoft C# 擴充（`launch.json`） |
@@ -19,7 +19,7 @@
 
 ### 1.2 方案對照：舊方案 vs 新方案
 
-| | 舊方案：**msvsmon.exe** | 新方案：**vsdbg**（本計劃） |
+| | **msvsmon.exe** | **vsdbg**（本計劃） |
 |--|------------------------|---------------------------|
 | **目標** | ❌ 僅 Windows | ✅ Linux／Windows（K8s Linux 容器適用） |
 | **原理** | TCP 網路連線 | **需進入執行環境**再除錯 |
@@ -94,7 +94,7 @@ flowchart LR
 
 - `dotnet publish -c Debug`，並產生 **Portable PDB**（與 DLL 同源，斷點才能綁定）。
 - 安裝 **vsdbg** 到 `/vsdbg`（供 IDE attach）。
-- 保留 `/app/NhiApi.pdb`。
+- 保留 `/app/MyApi.pdb`。
 - 僅在 **GitHub Actions 手動執行** deploy 時選用。
 
 > PDB 必須與執行中的 DLL 來自**同一次 publish**。`Dockerfile.debug` 一次建進映像，避免事後重編 PDB 對不上。
@@ -147,8 +147,8 @@ Workflow：`Build and Deploy to K3s`（`.github/workflows/deploy.yml`）
         ▼
 應用容器（K8s Pod）
         ├── /vsdbg/vsdbg      ← 除錯器（在容器內跑）
-        ├── /app/NhiApi.dll   ← 執行中的 .NET 程式（通常 PID 1）
-        └── /app/NhiApi.pdb   ← 同源符號
+        ├── /app/MyApi.dll   ← 執行中的 .NET 程式（通常 PID 1）
+        └── /app/MyApi.pdb   ← 同源符號
 ```
 
 | 角色 | 說明 |
@@ -172,14 +172,14 @@ HTTP 的 port-forward 只為打 API **觸發**斷點，**不是**除錯通道（
 | 3 | **.NET SDK（本機）** | 建議與專案一致（.NET 10），方便本機對原始碼下斷點 |
 | 4 | **可進入 K8s 容器的連線** | 本機 `ssh` 能登入**跳板機**，且跳板機上能 `kubectl exec` 進入目標 Pod／容器 |
 | 5 | **SSH 私鑰** | 本機 `scripts/p.key`（勿提交）；對應跳板機帳號 |
-| 6 | **已部署除錯映像** | Pod 使用 `Dockerfile.debug`（有 `/vsdbg/vsdbg` 與 `/app/NhiApi.pdb`） |
+| 6 | **已部署除錯映像** | Pod 使用 `Dockerfile.debug`（有 `/vsdbg/vsdbg` 與 `/app/MyApi.pdb`） |
 | 7 | **launch.json** | 專案內 `.vscode/launch.json` 已寫好連線與 attach 參數（見下） |
 
 Windows 額外：系統 OpenSSH（`ssh.exe`）；若出現 `p.key too open`，用 `icacls` 收緊金鑰 ACL。
 
 ### 6.2 `launch.json` 連線資訊（重點欄位）
 
-設定名稱：**NhiApi: Attach K8s (SSH)**（路徑：`.vscode/launch.json`）。
+設定名稱：**MyApi: Attach K8s (SSH)**（路徑：`.vscode/launch.json`）。
 
 | 欄位 | 作用 | 本專案示例 |
 |------|------|------------|
@@ -189,7 +189,7 @@ Windows 額外：系統 OpenSSH（`ssh.exe`）；若出現 `p.key too open`，�
 | `pipeArgs`（SSH） | **跳板機**帳號、主機、金鑰 | `-i scripts/p.key`、`github@<跳板機>` |
 | `pipeArgs`（kubectl） | 在跳板機上**進入容器** | `kubectl exec -i deploy/my-app-deploy -c my-app --` |
 | `debuggerPath` | 容器內 vsdbg | `/vsdbg/vsdbg` |
-| `sourceFileMap` | 容器原始碼路徑 ↔ 本機 | `/src/NhiApi` → `${workspaceFolder}/src/NhiApi` |
+| `sourceFileMap` | 容器原始碼路徑 ↔ 本機 | `/src/MyApi` → `${workspaceFolder}/src/MyApi` |
 
 換環境時至少要改：`pipeArgs` 裡的 **跳板機使用者／主機／金鑰路徑**，以及 **Deployment／container 名稱**（須仍能從跳板機 `kubectl exec` 進該容器）。
 
@@ -215,7 +215,7 @@ Windows 額外：系統 OpenSSH（`ssh.exe`）；若出現 `p.key too open`，�
 | 4 | 等 rollout 完成 | Pod 跑的是 `*-debug` 映像 |
 | 5 | 驗證能進容器（可選） | `ssh … -- kubectl exec -it deploy/my-app-deploy -c my-app -- ls /vsdbg/vsdbg` |
 | 6 | 下斷點 | 本機 `Program.cs` |
-| 7 | Attach | **NhiApi: Attach K8s (SSH)** → F5（此時會經 SSH／exec **進入容器** 啟動 vsdbg） |
+| 7 | Attach | **MyApi: Attach K8s (SSH)** → F5（此時會經 SSH／exec **進入容器** 啟動 vsdbg） |
 | 8 | 觸發請求 | port-forward 後 `curl http://localhost:8080/`（或目標 API） |
 | 9 | 結束 | **Detach**（不要 Stop，以免殺掉遠端 `dotnet`） |
 | 10 | （可選）切回精簡 | 手動 deploy 選 `Dockerfile` |

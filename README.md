@@ -1,6 +1,6 @@
-# nhi-k8s-debug
+# k8s-debug
 
-儲存庫：https://github.com/zeroflare/nhi-k8s-debug （Public）
+儲存庫：https://github.com/zeroflare/k8s-debug （Public）
 
 .NET 10 Minimal API，部署到 K3s 後用 **vsdbg + kubectl exec** 遠端下斷點。vsdbg 不開 TCP port。
 
@@ -20,7 +20,7 @@ push `main` 部署預設映像（tag = commit SHA）；要除錯時手動 Run **
 2. 本機需 [.NET 10 SDK](https://dotnet.microsoft.com/download)。
 3. 本機放置 `scripts/p.key`（勿提交）。
 4. Actions 部署 **`Dockerfile.debug`**。
-5. 在 `Program.cs` 下斷點 → Run and Debug 選 **NhiApi: Attach K8s (SSH)** → F5  
+5. 在 `Program.cs` 下斷點 → Run and Debug 選 **MyApi: Attach K8s (SSH)** → F5  
    （Windows 會自動用 `launch.json` 裡的 `windows.pipeTransport`。）
 6. Port-forward 後打 API：
 

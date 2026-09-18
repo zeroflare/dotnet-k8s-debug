@@ -2,19 +2,19 @@
   "version": "2.0.0",
   "configurations": [
     {
-      "name": "NhiApi: 本機",
+      "name": "MyApi: 本機",
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build",
-      "program": "${workspaceFolder}/src/NhiApi/bin/Debug/net10.0/NhiApi.dll",
+      "program": "${workspaceFolder}/src/MyApi/bin/Debug/net10.0/MyApi.dll",
       "args": [],
-      "cwd": "${workspaceFolder}/src/NhiApi",
+      "cwd": "${workspaceFolder}/src/MyApi",
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
     },
     {
-      "name": "NhiApi: Attach K8s (SSH)",
+      "name": "MyApi: Attach K8s (SSH)",
       "type": "coreclr",
       "request": "attach",
       "processId": 1,
@@ -70,7 +70,7 @@
         }
       },
       "sourceFileMap": {
-        "/src/NhiApi": "${workspaceFolder}/src/NhiApi"
+        "/src/MyApi": "${workspaceFolder}/src/MyApi"
       }
     }
   ]

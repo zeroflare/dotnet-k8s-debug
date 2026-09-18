@@ -3,11 +3,11 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-COPY src/NhiApi/NhiApi.csproj NhiApi/
-RUN dotnet restore NhiApi/NhiApi.csproj
+COPY src/MyApi/MyApi.csproj MyApi/
+RUN dotnet restore MyApi/MyApi.csproj
 
-COPY src/NhiApi/ NhiApi/
-WORKDIR /src/NhiApi
+COPY src/MyApi/ MyApi/
+WORKDIR /src/MyApi
 RUN dotnet publish -c Debug \
     -p:DebugType=portable \
     -p:DebugSymbols=true \
@@ -29,4 +29,4 @@ ENV ASPNETCORE_URLS=http://+:8080
 ENV ASPNETCORE_ENVIRONMENT=Development
 
 EXPOSE 8080
-ENTRYPOINT ["dotnet", "NhiApi.dll"]
+ENTRYPOINT ["dotnet", "MyApi.dll"]

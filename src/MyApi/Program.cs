@@ -6,7 +6,7 @@ app.MapGet("/", HandleRoot);
 static IResult HandleRoot()
 {
     var status = "ok";
-    return Results.Ok(new { name = "NhiApi", status });
+    return Results.Ok(new { name = "MyApi", status });
 }
 
 app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));

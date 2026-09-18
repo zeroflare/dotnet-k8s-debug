@@ -2,7 +2,7 @@
 
 | 項目 | 內容 |
 |------|------|
-| 儲存庫 | https://github.com/zeroflare/nhi-k8s-debug （Public） |
+| 儲存庫 | https://github.com/zeroflare/k8s-debug （Public） |
 | 主方案 | Microsoft **vsdbg** + **`kubectl exec`（stdio）** + **Portable PDB** |
 | 預設映像 | `Dockerfile`：Release，無 vsdbg／PDB |
 | 除錯映像 | `Dockerfile.debug`：Debug，內建 vsdbg + 同源 PDB |
@@ -30,7 +30,7 @@
 | 要件 | 本專案作法 |
 |------|------------|
 | 除錯器 | `Dockerfile.debug` 安裝 linux **vsdbg** → `/vsdbg` |
-| 符號 | `Dockerfile.debug` 保留同源 `/app/NhiApi.pdb` |
+| 符號 | `Dockerfile.debug` 保留同源 `/app/MyApi.pdb` |
 | 通道 | IDE → **ssh** → **`kubectl exec -i`** → `/vsdbg/vsdbg`（stdio） |
 
 **不必**手動進 shell，但 **必須有 `pods/exec`**。  
@@ -48,7 +48,7 @@ Linux 容器上微軟路徑是 **vsdbg + stdio／exec**，不是 msvsmon。
 | 角色 | 控制程序 | 對回原始碼 |
 | `Dockerfile`（預設） | 無 | 無 |
 | `Dockerfile.debug` | **有** | **有**（同源） |
-| 路徑 | `/vsdbg/vsdbg` | `/app/NhiApi.pdb` |
+| 路徑 | `/vsdbg/vsdbg` | `/app/MyApi.pdb` |
 
 ---
 
@@ -60,11 +60,11 @@ Linux 容器上微軟路徑是 **vsdbg + stdio／exec**，不是 msvsmon。
         ▼
 Pod（Dockerfile.debug）
         ├── /vsdbg/vsdbg
-        ├── /app/NhiApi.dll
-        └── /app/NhiApi.pdb
+        ├── /app/MyApi.dll
+        └── /app/MyApi.pdb
 ```
 
-`launch.json`：`coreclr` + `attach` + `processId: 1` + `debuggerPath: /vsdbg/vsdbg` + `sourceFileMap`（`/src/NhiApi` ↔ 本機）。
+`launch.json`：`coreclr` + `attach` + `processId: 1` + `debuggerPath: /vsdbg/vsdbg` + `sourceFileMap`（`/src/MyApi` ↔ 本機）。
 
 ---
 
@@ -84,7 +84,7 @@ push `main` 用 `Dockerfile`。Actions 手動 Run deploy 選 `Dockerfile.debug` 
 | # | 條件 |
 |---|------|
 | 1 | Linux 容器；能 **`kubectl exec -i`**（本專案經 SSH） |
-| 2 | 已部署 **`Dockerfile.debug`**（有 `/vsdbg/vsdbg` 與 `/app/NhiApi.pdb`） |
+| 2 | 已部署 **`Dockerfile.debug`**（有 `/vsdbg/vsdbg` 與 `/app/MyApi.pdb`） |
 | 3 | 本機原始碼與部署 commit 一致；`sourceFileMap` 正確 |
 | 4 | VS Code + Microsoft C# |
 | 5 | 建議 replicas = 1；注意 liveness |
@@ -139,5 +139,5 @@ Secrets：`SSH_PRIVATE_KEY`、`SSH_HOST`、`SSH_USERNAME`。
 | `.vscode/launch.json` | attach／pipeTransport |
 | `.github/workflows/deploy.yml` | 建置部署 |
 
-- 儲存庫：https://github.com/zeroflare/nhi-k8s-debug  
+- 儲存庫：https://github.com/zeroflare/k8s-debug  
 - [Attaching to remote processes](https://github.com/dotnet/vscode-csharp/blob/main/docs/debugger/Attaching-to-remote-processes.md)  
