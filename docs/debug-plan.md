@@ -17,7 +17,7 @@
 - 需要下斷點、改區域變數時，改部署「除錯映像」，在本機 VS Code attach 到 **K8s Pod 內的 `dotnet` 程序**。
 - **核心原理：本機除錯器必須能進入 K8s 容器**（經 **SSH → 跳板機** → `kubectl exec -i` 啟動容器內 `vsdbg`），在容器內與執行中的 .NET 程序對話；不額外暴露除錯 TCP port。
 
-### 1.2 方案對照：舊方案 vs 新方案
+### 1.2 方案對照
 
 | | **msvsmon.exe** | **vsdbg**（本計劃） |
 |--|------------------------|---------------------------|
@@ -43,8 +43,6 @@
 ## 2. 測試環境架構
 
 測試／除錯相關流量都先到 **Linux 跳板機**，再由跳板機存取 Kubernetes 與映像庫。
-
-![測試環境：GitHub Actions／VS Code 經 SSH 進跳板機，再以 HTTPS（kubectl）連 Kubernetes 與 Image Registry](./images/test-environment-architecture.png)
 
 ```mermaid
 flowchart LR
@@ -201,7 +199,7 @@ Windows 額外：系統 OpenSSH（`ssh.exe`）；若出現 `p.key too open`，�
 
 遠端 attach、下斷點與觸發 API 的操作示範：
 
-<video src="./videos/debug-demo.mp4" controls width="720"></video>
+<video src="https://github.com/zeroflare/dotnet-k8s-debug/raw/main/docs/videos/debug-demo.mp4" controls width="720"></video>
 
 若無法內嵌播放，請直接開啟：[debug-demo.mp4](./videos/debug-demo.mp4)
 
@@ -255,7 +253,6 @@ curl http://localhost:8080/
 | `.github/workflows/deploy.yml` | 自動／手動部署；手動可選 Dockerfile |
 | `.vscode/launch.json` | VS Code 連線與 attach（含進容器的 `kubectl exec`） |
 | `k8s/my-app.yaml` | Deployment／Service |
-| `docs/images/test-environment-architecture.png` | 測試環境架構圖 |
 | `docs/videos/debug-demo.mp4` | 遠端 debug 操作示範影片 |
 | `docs/remote-k8s-dotnet-debug.md` | 原理補充說明 |
 
