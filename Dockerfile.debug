@@ -1,0 +1,32 @@
+# 除錯映像：內建 vsdbg + 同源 Portable PDB（Debug，關閉優化方便改區域變數）。
+# 建置：docker build -f Dockerfile.debug -t my-app:debug .
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+COPY src/NhiApi/NhiApi.csproj NhiApi/
+RUN dotnet restore NhiApi/NhiApi.csproj
+
+COPY src/NhiApi/ NhiApi/
+WORKDIR /src/NhiApi
+RUN dotnet publish -c Debug \
+    -p:DebugType=portable \
+    -p:DebugSymbols=true \
+    -o /app/publish \
+    --no-restore
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+WORKDIR /app
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl unzip procps \
+    && curl -sSL https://aka.ms/getvsdbgsh | /bin/sh /dev/stdin -v latest -l /vsdbg \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=build /app/publish .
+# 保留與 DLL 同一次 publish 的 PDB
+
+ENV ASPNETCORE_URLS=http://+:8080
+ENV ASPNETCORE_ENVIRONMENT=Development
+
+EXPOSE 8080
+ENTRYPOINT ["dotnet", "NhiApi.dll"]

@@ -42,41 +42,32 @@
         "debuggerPath": "/vsdbg/vsdbg",
         "quoteArgs": false
       },
-      "sourceFileMap": {
-        "/src/NhiApi": "${workspaceFolder}/src/NhiApi"
-      }
-    },
-    {
-      "name": "NhiApi: Attach K8s (SSH) [Windows]",
-      "type": "coreclr",
-      "request": "attach",
-      "processId": 1,
-      "justMyCode": false,
-      "preLaunchTask": "fix-ssh-key-acl",
-      "pipeTransport": {
-        "pipeCwd": "${workspaceFolder}",
-        "pipeProgram": "${env:WINDIR}\\System32\\OpenSSH\\ssh.exe",
-        "pipeArgs": [
-          "-T",
-          "-i",
-          "${workspaceFolder}/scripts/p.key",
-          "-o",
-          "BatchMode=yes",
-          "-o",
-          "IdentitiesOnly=yes",
-          "-o",
-          "StrictHostKeyChecking=accept-new",
-          "github@136.119.103.123",
-          "kubectl",
-          "exec",
-          "-i",
-          "deploy/my-app-deploy",
-          "-c",
-          "my-app",
-          "--"
-        ],
-        "debuggerPath": "/vsdbg/vsdbg",
-        "quoteArgs": false
+      "windows": {
+        "pipeTransport": {
+          "pipeCwd": "${workspaceFolder}",
+          "pipeProgram": "${env:WINDIR}\\System32\\OpenSSH\\ssh.exe",
+          "pipeArgs": [
+            "-T",
+            "-i",
+            "${workspaceFolder}/scripts/p.key",
+            "-o",
+            "BatchMode=yes",
+            "-o",
+            "IdentitiesOnly=yes",
+            "-o",
+            "StrictHostKeyChecking=accept-new",
+            "github@136.119.103.123",
+            "kubectl",
+            "exec",
+            "-i",
+            "deploy/my-app-deploy",
+            "-c",
+            "my-app",
+            "--"
+          ],
+          "debuggerPath": "/vsdbg/vsdbg",
+          "quoteArgs": false
+        }
       },
       "sourceFileMap": {
         "/src/NhiApi": "${workspaceFolder}/src/NhiApi"

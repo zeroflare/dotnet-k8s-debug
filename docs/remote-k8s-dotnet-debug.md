@@ -4,7 +4,8 @@
 |------|------|
 | 儲存庫 | https://github.com/zeroflare/nhi-k8s-debug （Public） |
 | 主方案 | Microsoft **vsdbg** + **`kubectl exec`（stdio）** + **Portable PDB** |
-| 預設映像 | **Debug + 內建 vsdbg + 同源 PDB**（預設不刪；方便斷點改區域變數） |
+| 預設映像 | `Dockerfile`：Release，無 vsdbg／PDB |
+| 除錯映像 | `Dockerfile.debug`：Debug，內建 vsdbg + 同源 PDB |
 | 環境 | Linux K3s／Kubernetes 容器內之 .NET 10 |
 | IDE | Visual Studio Code（建議）／Visual Studio（Windows） |
 
@@ -15,11 +16,11 @@
 | 概念 | 說明 |
 |------|------|
 | **IDE** | 本機操作介面。VS Code 靠 Microsoft **C#** 擴充功能（`coreclr`）發起除錯。 |
-| **除錯器（debugger）** | 真正 attach、設斷點、讀變數的程式。本專案為映像內 **vsdbg**。 |
+| **除錯器（debugger）** | 真正 attach、設斷點、讀變數的程式。本專案為 **vsdbg**（在 `Dockerfile.debug` 內）。 |
 | **DAP** | Debug Adapter Protocol；經 **stdio** 傳遞，不開除錯 TCP port。 |
 | **Attach** | 程式已在跑，再掛上除錯器（K8s 幾乎都用這個）。 |
 | **斷點** | 一般停在該行**執行前**；可改區域變數後 Continue。 |
-| **PDB** | 符號檔；須與執行中 DLL **同一次 publish**（另一次編譯的 PDB 檔在也對不上）。 |
+| **PDB** | 符號檔；須與執行中 DLL **同一次 publish**。 |
 | **Detach／Stop** | 遠端請用 **Detach**；Stop 可能殺掉 `dotnet`。 |
 
 ---
@@ -28,11 +29,9 @@
 
 | 要件 | 本專案作法 |
 |------|------------|
-| 除錯器 | Dockerfile 安裝 linux **vsdbg** → `/vsdbg` |
-| 符號 | 映像內保留同源 `/app/NhiApi.pdb`；deploy 上傳 GitHub Artifact `NhiApi-pdb-<sha>`，必要時 Enable 再注入 |
+| 除錯器 | `Dockerfile.debug` 安裝 linux **vsdbg** → `/vsdbg` |
+| 符號 | `Dockerfile.debug` 保留同源 `/app/NhiApi.pdb` |
 | 通道 | IDE → **ssh** → **`kubectl exec -i`** → `/vsdbg/vsdbg`（stdio） |
-
-**不要**用另一次 `dotnet publish` 重編 PDB 蓋上去：MVID 不同，斷點會失效。
 
 **不必**手動進 shell，但 **必須有 `pods/exec`**。  
 HTTP 8080 的 port-forward 只為打 API，與除錯通道無關。
@@ -47,8 +46,8 @@ Linux 容器上微軟路徑是 **vsdbg + stdio／exec**，不是 msvsmon。
 | | vsdbg | PDB |
 |--|-------|-----|
 | 角色 | 控制程序 | 對回原始碼 |
-| 沒有它 | 無法用本方案 attach | 往往能 attach，斷點對不到你的碼 |
-| 預設映像 | **有** | **有**（與 DLL 同一次 publish；預設不刪） |
+| `Dockerfile`（預設） | 無 | 無 |
+| `Dockerfile.debug` | **有** | **有**（同源） |
 | 路徑 | `/vsdbg/vsdbg` | `/app/NhiApi.pdb` |
 
 ---
@@ -59,27 +58,24 @@ Linux 容器上微軟路徑是 **vsdbg + stdio／exec**，不是 msvsmon。
 本機 IDE（attach）
         │  pipeTransport：ssh + kubectl exec -i … -- /vsdbg/vsdbg
         ▼
-Pod
-        ├── /vsdbg/vsdbg          ← 映像內建
+Pod（Dockerfile.debug）
+        ├── /vsdbg/vsdbg
         ├── /app/NhiApi.dll
-        └── /app/NhiApi.pdb       ← 映像內建（同源）；可選 Enable 從 GitHub Artifact 再注入
+        └── /app/NhiApi.pdb
 ```
 
-`launch.json`：`coreclr` + `attach` + `processId: 1` + `debuggerPath: /vsdbg/vsdbg` + `sourceFileMap`（`/src/NhiApi` ↔ 本機）。  
-Dockerfile 的 publish 目錄是 `/src/NhiApi`，PDB 內路徑才會對得上。
+`launch.json`：`coreclr` + `attach` + `processId: 1` + `debuggerPath: /vsdbg/vsdbg` + `sourceFileMap`（`/src/NhiApi` ↔ 本機）。
 
 ---
 
-## 4. 預設映像（含 vsdbg + PDB）
+## 4. 兩個 Dockerfile
 
-Dockerfile：
+| 檔案 | 建置 | vsdbg | PDB | 環境 |
+|------|------|-------|-----|------|
+| **`Dockerfile`**（預設／自動 deploy） | Release | 無 | 無 | Production |
+| **`Dockerfile.debug`** | Debug | 有 | 保留 | Development |
 
-1. `dotnet publish -c Debug -p:DebugType=portable -p:DebugSymbols=true`（關閉優化，斷點可改變數）  
-2. 安裝 **vsdbg**（與 curl／unzip／procps）  
-3. 拷入應用後**保留** `NhiApi.pdb`（預設不刪）  
-4. `ASPNETCORE_ENVIRONMENT=Development`  
-
-deploy 會上傳同源 PDB 為 GitHub Actions Artifact（供 Enable 補注；不寫入 K3s 主機）。
+push `main` 用 `Dockerfile`。Actions 手動 Run deploy 選 `Dockerfile.debug` 才可遠端下斷點。
 
 ---
 
@@ -87,8 +83,8 @@ deploy 會上傳同源 PDB 為 GitHub Actions Artifact（供 Enable 補注；不
 
 | # | 條件 |
 |---|------|
-| 1 | Linux 容器上的 .NET；能 **`kubectl exec -i`**（本專案經 SSH） |
-| 2 | 映像內有 `/vsdbg/vsdbg` 與 `/app/NhiApi.pdb` |
+| 1 | Linux 容器；能 **`kubectl exec -i`**（本專案經 SSH） |
+| 2 | 已部署 **`Dockerfile.debug`**（有 `/vsdbg/vsdbg` 與 `/app/NhiApi.pdb`） |
 | 3 | 本機原始碼與部署 commit 一致；`sourceFileMap` 正確 |
 | 4 | VS Code + Microsoft C# |
 | 5 | 建議 replicas = 1；注意 liveness |
@@ -97,36 +93,30 @@ deploy 會上傳同源 PDB 為 GitHub Actions Artifact（供 Enable 補注；不
 
 ## 6. 一次遠端除錯怎麼走
 
-1. 部署（push `main` → deploy；vsdbg + PDB 已在 image）。  
+1. Actions 手動 deploy，選 **`Dockerfile.debug`**。  
 2. 本機同 commit 原始碼下斷點 → **Attach K8s (SSH)**。  
 3. Port-forward → 打 API → 命中斷點。  
 4. **Detach**。  
 
-若執行中 PDB 被刪，可跑 **Enable Debug Tools (PDB)** 從該次 deploy 的 Artifact 注入。
-
-Visual Studio：同一遠端 vsdbg，用 `scripts/Start-VsK8sAttach.ps1`。
+Visual Studio：本專案遠端 attach 以 **VS Code + launch.json** 為主（不提供 `.ps1`）。
 
 ### 常見狀況
 
 | 現象 | 可能原因 |
 |------|----------|
-| Attach 失敗 | vsdbg 路徑不對、exec／SSH 問題 |
-| 斷點不停／灰色 | PDB 被刪且未 Enable、sourceFileMap 不對、本機碼與部署 commit 不同 |
-| `0x80131c08`（TIMEOUT） | 殘留 attach／連線卡住；先 Detach，必要時重啟 Deployment |
+| Attach 失敗 | 部署的是精簡映像、vsdbg 路徑不對、exec／SSH 問題 |
+| 斷點不停／灰色 | 非 debug 映像、sourceFileMap 不對、本機碼與部署 commit 不同 |
+| `0x80131c08`（TIMEOUT） | 殘留 attach；先 Detach，必要時重啟 Deployment |
 
 ---
 
-## 7. GitHub Actions：PDB Artifact／注入／移除
+## 7. GitHub Actions
 
 | Workflow | 行為 |
 |----------|------|
-| **deploy** | build／push image（含 PDB）；上傳 Artifact `NhiApi-pdb-<sha>`（保留 30 天） |
-| **[Enable Debug Tools](https://github.com/zeroflare/nhi-k8s-debug/blob/main/.github/workflows/debug-enable.yml)** | 依 Deployment image tag 下載對應 Artifact → 注入 pod（暫存 `/tmp` 後刪除） |
-| **[Remove Debug Tools](https://github.com/zeroflare/nhi-k8s-debug/blob/main/.github/workflows/debug-disable.yml)** | 從執行中 pod 刪除 PDB（映像重建後會回來） |
+| **deploy** | push 用 `Dockerfile`；手動可選 `Dockerfile.debug` |
 
-- Enable／Remove 手動 **Run workflow**；Secrets：`SSH_PRIVATE_KEY`、`SSH_HOST`、`SSH_USERNAME`  
-- **不**把 PDB 長期存在 K3s 主機  
-- 多 replica 時現行實作可能只打到一個 Pod  
+Secrets：`SSH_PRIVATE_KEY`、`SSH_HOST`、`SSH_USERNAME`。
 
 ---
 
@@ -138,21 +128,16 @@ Visual Studio：同一遠端 vsdbg，用 `scripts/Start-VsK8sAttach.ps1`。
 | 通道 | stdio + exec | TCP ≈ 4026 | stdio 或 TCP server |
 | Linux K8s | ✅ | ❌ | 可行，未採用 |
 
-Linux Pod 不要用 msvsmon／4026；本專案為 vsdbg + exec。
-
 ---
 
 ## 9. 產物與參考
 
 | 路徑 | 用途 |
 |------|------|
-| `Dockerfile` | Release 應用 + 內建 vsdbg + 同源 PDB |
+| `Dockerfile` | 預設精簡映像 |
+| `Dockerfile.debug` | 除錯映像 |
 | `.vscode/launch.json` | attach／pipeTransport |
-| `.github/workflows/deploy.yml` | 建置部署 + 上傳 PDB Artifact |
-| `.github/workflows/debug-enable.yml` | 從 Artifact 注入 PDB |
-| `.github/workflows/debug-disable.yml` | 可選移除執行中 PDB |
+| `.github/workflows/deploy.yml` | 建置部署 |
 
 - 儲存庫：https://github.com/zeroflare/nhi-k8s-debug  
 - [Attaching to remote processes](https://github.com/dotnet/vscode-csharp/blob/main/docs/debugger/Attaching-to-remote-processes.md)  
-- [Remote Debugging](https://learn.microsoft.com/en-us/visualstudio/debugger/remote-debugging)（msvsmon）  
-- [netcoredbg](https://github.com/Samsung/netcoredbg)  
