@@ -21,12 +21,19 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    - name: Resolve Dockerfile
+    - name: Resolve Dockerfile and image tag
       id: df
       run: |
         DF="${{ github.event.inputs.dockerfile || 'Dockerfile' }}"
+        SHA="${{ github.sha }}"
+        if [ "${DF}" = "Dockerfile.debug" ]; then
+          TAG="${SHA}-debug"
+        else
+          TAG="${SHA}"
+        fi
         echo "dockerfile=${DF}" >> "$GITHUB_OUTPUT"
-        echo "Using ${DF}"
+        echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+        echo "Using ${DF} -> localhost:5000/my-app:${TAG}"
 
     - name: Set up SSH Key & Tunnel
       run: |
@@ -41,14 +48,14 @@ jobs:
     - name: Build and Push Docker Image
       run: |
         set -euo pipefail
-        SHA="${{ github.sha }}"
         DF="${{ steps.df.outputs.dockerfile }}"
-        docker build -f "${DF}" -t "localhost:5000/my-app:${SHA}" .
-        docker push "localhost:5000/my-app:${SHA}"
+        TAG="${{ steps.df.outputs.tag }}"
+        docker build -f "${DF}" -t "localhost:5000/my-app:${TAG}" .
+        docker push "localhost:5000/my-app:${TAG}"
 
     - name: Copy k8s manifests
       run: |
-        sed -i "s|__IMAGE_TAG__|${{ github.sha }}|g" k8s/my-app.yaml
+        sed -i "s|__IMAGE_TAG__|${{ steps.df.outputs.tag }}|g" k8s/my-app.yaml
         ssh ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} 'mkdir -p ~/my-app-k8s'
         scp k8s/* ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:~/my-app-k8s/
 
@@ -60,4 +67,6 @@ jobs:
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
           kubectl apply -f ~/my-app-k8s/my-app.yaml
+          # 同一 tag 重推時 apply 可能 unchanged；強制重啟以拉新映像
+          kubectl rollout restart deployment/my-app-deploy
           kubectl rollout status deployment/my-app-deploy --timeout=180s

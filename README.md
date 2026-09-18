@@ -9,7 +9,7 @@
 | `Dockerfile`（預設） | 一般 Release 執行（無 vsdbg／PDB／curl） |
 | `Dockerfile.debug` | Debug、curl、**有** vsdbg + 同源 PDB |
 
-push `main` 部署預設映像；要除錯時手動 Run **Build and Deploy** 選 `Dockerfile.debug`。
+push `main` 部署預設映像（tag = commit SHA）；要除錯時手動 Run **Build and Deploy** 選 `Dockerfile.debug`（tag = `<sha>-debug`）。
 
 原理見 [docs/remote-k8s-dotnet-debug.md](./docs/remote-k8s-dotnet-debug.md)。
 
