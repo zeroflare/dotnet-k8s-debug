@@ -201,7 +201,7 @@ Windows 額外：系統 OpenSSH（`ssh.exe`）；若出現 `p.key too open`，�
 
 <video src="https://github.com/zeroflare/dotnet-k8s-debug/raw/main/docs/videos/debug-demo.mp4" controls width="720"></video>
 
-若無法內嵌播放，請直接開啟：[debug-demo.mp4](./videos/debug-demo.mp4)
+若無法內嵌播放，請直接開啟：[debug-demo.mp4](https://github.com/zeroflare/dotnet-k8s-debug/raw/main/docs/videos/debug-demo.mp4)
 
 ### 7.2 步驟
 
