@@ -2,7 +2,7 @@
 
 | 項目 | 內容 |
 |------|------|
-| 儲存庫 | https://github.com/zeroflare/dotnet-dotnet-k8s-debug （Public） |
+| 儲存庫 | https://github.com/zeroflare/dotnet-k8s-debug （Public） |
 | 主方案 | Microsoft **vsdbg** + **`kubectl exec`（stdio）** + **Portable PDB** |
 | 預設映像 | `Dockerfile`：Release，無 vsdbg／PDB |
 | 除錯映像 | `Dockerfile.debug`：Debug，內建 vsdbg + 同源 PDB |
@@ -139,5 +139,5 @@ Secrets：`SSH_PRIVATE_KEY`、`SSH_HOST`、`SSH_USERNAME`。
 | `.vscode/launch.json` | attach／pipeTransport |
 | `.github/workflows/deploy.yml` | 建置部署 |
 
-- 儲存庫：https://github.com/zeroflare/dotnet-dotnet-k8s-debug  
+- 儲存庫：https://github.com/zeroflare/dotnet-k8s-debug  
 - [Attaching to remote processes](https://github.com/dotnet/vscode-csharp/blob/main/docs/debugger/Attaching-to-remote-processes.md)  

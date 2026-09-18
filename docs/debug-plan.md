@@ -2,7 +2,7 @@
 
 | 項目 | 內容 |
 |------|------|
-| 專案 | [dotnet-dotnet-k8s-debug](https://github.com/zeroflare/dotnet-dotnet-k8s-debug) |
+| 專案 | [dotnet-k8s-debug](https://github.com/zeroflare/dotnet-k8s-debug) |
 | 目標環境 | **Kubernetes（K3s）上的 .NET 10** 應用（容器內執行） |
 | 除錯方式 | Microsoft **vsdbg** + `kubectl exec`（stdio／DAP），**不開**除錯 TCP port |
 | IDE | Visual Studio Code + Microsoft C# 擴充（`launch.json`） |
